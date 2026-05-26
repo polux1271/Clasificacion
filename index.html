@@ -15,7 +15,7 @@
     --subtitulo:    "Unos Rien... Otros... Nos divertimos";      /* Subtítulo */
     --col-nombre:   "Nombre";   /* Encabezado columna A en tu sheet */
     --col-puntaje:  "Puntaje";  /* Encabezado columna B en tu sheet */
-    --intervalo-seg: 3600;        /* Segundos entre actualizaciones */
+    --intervalo-seg: 300;        /* Segundos entre actualizaciones */
   }
 
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -332,7 +332,7 @@
   </div>
 
   <footer>
-    Actualización automática cada <span id="intervalo-lbl">3600</span> segundos
+    Actualización automática cada <span id="intervalo-lbl">300</span> segundos
     &nbsp;·&nbsp; Datos en tiempo real
   </footer>
 
@@ -353,7 +353,7 @@ const TITULO    = "CLASIFICACIÓN GENERAL";
 const SUBTITULO = "Unos Rien... Otros... Nos divertimos";
 
 //  Intervalo de actualización (segundos)
-const INTERVALO_SEG = 3600;
+const INTERVALO_SEG = 300;
 // ================================================================
 
 document.getElementById('titulo-evento').textContent  = TITULO;
