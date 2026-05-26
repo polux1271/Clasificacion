@@ -1,0 +1,506 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Clasificación General</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  /* =============================================
+     CONFIGURACIÓN — edita solo esta sección
+  ============================================= */
+  :root {
+    --titulo:       "CLASIFICACIÓN GENERAL";   /* Título del evento */
+    --subtitulo:    "Tabla de posiciones";      /* Subtítulo */
+    --col-nombre:   "Nombre";   /* Encabezado columna A en tu sheet */
+    --col-puntaje:  "Puntaje";  /* Encabezado columna B en tu sheet */
+    --intervalo-seg: 30;        /* Segundos entre actualizaciones */
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    min-height: 100vh;
+    background: #0a0e1a;
+    color: #e8eaf0;
+    font-family: 'DM Sans', sans-serif;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 2rem 1rem 4rem;
+    overflow-x: hidden;
+  }
+
+  /* Fondo con textura sutil */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse 80% 50% at 50% -10%, rgba(99,130,255,0.12) 0%, transparent 70%),
+      radial-gradient(ellipse 60% 40% at 80% 110%, rgba(200,150,30,0.08) 0%, transparent 60%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    width: 100%;
+    max-width: 760px;
+  }
+
+  /* ---- Header ---- */
+  header {
+    text-align: center;
+    padding: 2.5rem 0 2rem;
+  }
+
+  .event-label {
+    display: inline-block;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: #c8940f;
+    background: rgba(200,148,15,0.12);
+    border: 1px solid rgba(200,148,15,0.25);
+    border-radius: 20px;
+    padding: 4px 16px;
+    margin-bottom: 1rem;
+  }
+
+  h1 {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: clamp(2.8rem, 8vw, 5rem);
+    letter-spacing: 3px;
+    color: #ffffff;
+    line-height: 1;
+    margin-bottom: 0.4rem;
+  }
+
+  .subtitle {
+    font-size: 14px;
+    color: rgba(232,234,240,0.45);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* ---- Barra de estado ---- */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.6rem 1rem;
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    margin-bottom: 1.5rem;
+    font-size: 12px;
+    color: rgba(232,234,240,0.4);
+  }
+
+  .status-dot {
+    display: inline-block;
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: #3ecb7a;
+    margin-right: 6px;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .status-dot.error { background: #e24b4a; animation: none; }
+  .status-dot.loading { background: #c8940f; }
+
+  @keyframes pulse {
+    0%,100% { opacity: 1; }
+    50%      { opacity: 0.3; }
+  }
+
+  /* ---- Podio top-3 ---- */
+  .podio {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 2rem;
+  }
+
+  .podio-card {
+    background: rgba(255,255,255,0.04);
+    border: 0.5px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 1.25rem 1rem 1rem;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.2s;
+  }
+
+  .podio-card:hover { transform: translateY(-3px); }
+
+  .podio-card.pos-1 {
+    border-color: rgba(212,175,55,0.4);
+    background: rgba(212,175,55,0.06);
+    grid-row: 1;
+    padding-top: 1.5rem;
+  }
+
+  .podio-card.pos-2 { border-color: rgba(180,185,200,0.3); background: rgba(180,185,200,0.04); }
+  .podio-card.pos-3 { border-color: rgba(176,117,70,0.3); background: rgba(176,117,70,0.04); }
+
+  .medal {
+    font-size: 2rem;
+    display: block;
+    margin-bottom: 0.5rem;
+  }
+
+  .podio-nombre {
+    font-size: 14px;
+    font-weight: 600;
+    color: #e8eaf0;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .podio-puntaje {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.8rem;
+    letter-spacing: 1px;
+  }
+
+  .pos-1 .podio-puntaje { color: #d4af37; }
+  .pos-2 .podio-puntaje { color: #b4b9c8; }
+  .pos-3 .podio-puntaje { color: #b07546; }
+
+  .pos-badge {
+    position: absolute;
+    top: 8px; left: 10px;
+    font-size: 10px;
+    font-weight: 600;
+    color: rgba(232,234,240,0.25);
+    letter-spacing: 1px;
+  }
+
+  /* ---- Tabla resto ---- */
+  .table-wrap {
+    background: rgba(255,255,255,0.03);
+    border: 0.5px solid rgba(255,255,255,0.07);
+    border-radius: 16px;
+    overflow: hidden;
+  }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  thead th {
+    padding: 0.8rem 1.25rem;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: rgba(232,234,240,0.3);
+    text-align: left;
+    border-bottom: 0.5px solid rgba(255,255,255,0.07);
+  }
+
+  thead th.right { text-align: right; }
+
+  tbody tr {
+    border-bottom: 0.5px solid rgba(255,255,255,0.04);
+    transition: background 0.15s;
+  }
+
+  tbody tr:last-child { border-bottom: none; }
+  tbody tr:hover { background: rgba(255,255,255,0.03); }
+
+  td {
+    padding: 0.85rem 1.25rem;
+    font-size: 15px;
+    color: #c8cad4;
+  }
+
+  .td-pos {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1rem;
+    color: rgba(232,234,240,0.25);
+    width: 48px;
+  }
+
+  .td-nombre { font-weight: 500; color: #e8eaf0; }
+
+  .td-score {
+    text-align: right;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.2rem;
+    letter-spacing: 1px;
+    color: #a8b8ff;
+  }
+
+  /* ---- Estados vacíos y errores ---- */
+  .empty-state {
+    text-align: center;
+    padding: 3rem 1rem;
+    color: rgba(232,234,240,0.3);
+    font-size: 14px;
+  }
+
+  .empty-state .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+
+  /* ---- Footer ---- */
+  footer {
+    text-align: center;
+    margin-top: 2.5rem;
+    font-size: 12px;
+    color: rgba(232,234,240,0.2);
+    letter-spacing: 0.5px;
+  }
+
+  /* ---- Spinner ---- */
+  .spinner {
+    display: inline-block;
+    width: 18px; height: 18px;
+    border: 2px solid rgba(232,234,240,0.1);
+    border-top-color: #c8940f;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    vertical-align: middle;
+    margin-right: 6px;
+  }
+
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* ---- Fila nueva (highlight) ---- */
+  @keyframes rowIn {
+    from { background: rgba(99,130,255,0.15); }
+    to   { background: transparent; }
+  }
+
+  .row-new { animation: rowIn 1.5s ease-out; }
+
+  /* ---- Responsive ---- */
+  @media (max-width: 520px) {
+    .podio { grid-template-columns: 1fr; }
+    .podio-card.pos-1 { order: -1; }
+    h1 { font-size: 2.5rem; }
+    td, thead th { padding: 0.7rem 0.9rem; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+
+  <header>
+    <span class="event-label">En vivo</span>
+    <h1 id="titulo-evento">CLASIFICACIÓN</h1>
+    <p class="subtitle" id="subtitulo-evento">Tabla de posiciones</p>
+  </header>
+
+  <div class="status-bar">
+    <span id="status-txt"><span class="status-dot loading" id="status-dot"></span> Cargando datos…</span>
+    <span id="countdown-txt"></span>
+  </div>
+
+  <!-- Podio top 3 -->
+  <div class="podio" id="podio" style="display:none"></div>
+
+  <!-- Tabla del resto -->
+  <div class="table-wrap" id="table-wrap" style="display:none">
+    <table>
+      <thead>
+        <tr>
+          <th>#</th>
+          <th id="th-nombre">Participante</th>
+          <th class="right" id="th-puntaje">Puntaje</th>
+        </tr>
+      </thead>
+      <tbody id="tabla-body"></tbody>
+    </table>
+  </div>
+
+  <div class="empty-state" id="empty-state" style="display:none">
+    <div class="icon">📋</div>
+    <p>Aún no hay datos cargados.<br>Verifica que el sheet esté publicado correctamente.</p>
+  </div>
+
+  <div class="empty-state" id="error-state" style="display:none">
+    <div class="icon">⚠️</div>
+    <p id="error-msg">No se pudo conectar con la hoja de cálculo.</p>
+  </div>
+
+  <footer>
+    Actualización automática cada <span id="intervalo-lbl">30</span> segundos
+    &nbsp;·&nbsp; Datos en tiempo real
+  </footer>
+
+</div>
+
+<script>
+// ================================================================
+//  ⚙️  CONFIGURACIÓN — PEGA AQUÍ TU URL DE GOOGLE SHEETS
+// ================================================================
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_0J0YT_RRJ3K7eGrDI_pCcS4FFrW_afgmVUWp2C2jUqOJqyA3IHdSZSmXyPJqc6PJGlVJiD/pub?gid=685591920&single=true&output=csv";
+
+//  Nombre de las columnas en tu Google Sheet (sensible a mayúsculas)
+const COL_NOMBRE  = "Nombre";   // columna con los nombres
+const COL_PUNTAJE = "Puntaje";  // columna con los puntajes
+
+//  Título visible en la página
+const TITULO    = "CLASIFICACIÓN GENERAL";
+const SUBTITULO = "Tabla de posiciones";
+
+//  Intervalo de actualización (segundos)
+const INTERVALO_SEG = 30;
+// ================================================================
+
+document.getElementById('titulo-evento').textContent  = TITULO;
+document.getElementById('subtitulo-evento').textContent = SUBTITULO;
+document.getElementById('intervalo-lbl').textContent  = INTERVALO_SEG;
+document.title = TITULO;
+
+const medals = ['🥇','🥈','🥉'];
+const posClasses = ['pos-1','pos-2','pos-3'];
+let countdown = INTERVALO_SEG;
+let countdownTimer = null;
+let prevNames = new Set();
+
+function parseCSV(text) {
+  const lines = text.trim().split(/\r?\n/);
+  if (lines.length < 2) return [];
+  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
+  const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
+  const iPuntaje = headers.findIndex(h => h.toLowerCase() === COL_PUNTAJE.toLowerCase());
+  if (iNombre < 0 || iPuntaje < 0) return null; // columnas no encontradas
+
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g,''));
+    const nombre  = cols[iNombre] || '';
+    const puntaje = parseFloat(cols[iPuntaje]);
+    if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
+  }
+  return rows;
+}
+
+function setStatus(type, msg, countdown) {
+  const dot = document.getElementById('status-dot');
+  const txt = document.getElementById('status-txt');
+  dot.className = 'status-dot ' + (type === 'ok' ? '' : type);
+  txt.innerHTML = `<span class="status-dot ${type === 'ok' ? '' : type}" id="status-dot"></span> ${msg}`;
+  document.getElementById('countdown-txt').textContent = countdown || '';
+}
+
+function renderPodio(top3) {
+  const podio = document.getElementById('podio');
+  podio.style.display = 'grid';
+  podio.innerHTML = '';
+  const order = top3.length >= 3 ? [1,0,2] : top3.map((_,i)=>i); // plata-oro-bronce visual
+  order.forEach(idx => {
+    if (!top3[idx]) return;
+    const p = top3[idx];
+    const card = document.createElement('div');
+    card.className = `podio-card ${posClasses[idx]}`;
+    card.innerHTML = `
+      <span class="pos-badge">#${idx+1}</span>
+      <span class="medal">${medals[idx]}</span>
+      <div class="podio-nombre">${p.nombre}</div>
+      <div class="podio-puntaje">${p.puntaje.toLocaleString('es-CO')}</div>`;
+    podio.appendChild(card);
+  });
+}
+
+function renderTabla(resto) {
+  const wrap = document.getElementById('table-wrap');
+  const body = document.getElementById('tabla-body');
+  if (resto.length === 0) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  body.innerHTML = '';
+  resto.forEach((p, i) => {
+    const pos = i + 4;
+    const isNew = !prevNames.has(p.nombre);
+    const tr = document.createElement('tr');
+    if (isNew && prevNames.size > 0) tr.className = 'row-new';
+    tr.innerHTML = `
+      <td class="td-pos">${pos}</td>
+      <td class="td-nombre">${p.nombre}</td>
+      <td class="td-score">${p.puntaje.toLocaleString('es-CO')}</td>`;
+    body.appendChild(tr);
+  });
+}
+
+async function fetchData() {
+  if (SHEET_CSV_URL === "PEGA_AQUI_TU_URL_CSV") {
+    setStatus('error', 'Configura tu URL de Google Sheets en el archivo HTML');
+    document.getElementById('error-state').style.display = 'block';
+    document.getElementById('error-msg').textContent = 'Edita el archivo y pega tu URL de Google Sheets CSV.';
+    return;
+  }
+
+  try {
+    setStatus('loading', '<span class="spinner"></span>Actualizando…');
+    const cacheBust = `&_t=${Date.now()}`;
+    const url = SHEET_CSV_URL.includes('?') ? SHEET_CSV_URL + cacheBust : SHEET_CSV_URL + '?' + cacheBust;
+    const resp = await fetch(url, { cache: 'no-store' });
+    if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const text = await resp.text();
+    const datos = parseCSV(text);
+
+    document.getElementById('error-state').style.display = 'none';
+    document.getElementById('empty-state').style.display = 'none';
+
+    if (!datos) {
+      setStatus('error', `Error: columnas "${COL_NOMBRE}" o "${COL_PUNTAJE}" no encontradas`);
+      return;
+    }
+
+    if (datos.length === 0) {
+      document.getElementById('podio').style.display = 'none';
+      document.getElementById('table-wrap').style.display = 'none';
+      document.getElementById('empty-state').style.display = 'block';
+      setStatus('ok', 'Conectado — sin participantes aún');
+      return;
+    }
+
+    datos.sort((a,b) => b.puntaje - a.puntaje);
+    const top3 = datos.slice(0,3);
+    const resto = datos.slice(3);
+
+    renderPodio(top3);
+    renderTabla(resto);
+
+    prevNames = new Set(datos.map(d => d.nombre));
+
+    const now = new Date().toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit', second:'2-digit'});
+    setStatus('ok', `Actualizado a las ${now}`);
+  } catch(e) {
+    setStatus('error', 'Sin conexión — reintentando…');
+    document.getElementById('error-state').style.display = 'block';
+    document.getElementById('error-msg').textContent = 'No se pudo leer el archivo. Verifica que el sheet esté publicado como CSV.';
+    console.error(e);
+  }
+
+  resetCountdown();
+}
+
+function resetCountdown() {
+  clearInterval(countdownTimer);
+  countdown = INTERVALO_SEG;
+  countdownTimer = setInterval(() => {
+    countdown--;
+    if (countdown <= 0) {
+      clearInterval(countdownTimer);
+      fetchData();
+    } else {
+      document.getElementById('countdown-txt').textContent = `Próx. actualización: ${countdown}s`;
+    }
+  }, 1000);
+}
+
+// Carga inicial
+fetchData();
+</script>
+</body>
+</html>
