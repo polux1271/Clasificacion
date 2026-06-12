@@ -316,6 +316,7 @@
     color: rgba(232,234,240,0.65);
     letter-spacing: 0.5px;
   "></div>
+
   <div class="podio" id="podio" style="display:none"></div>
 
   <!-- Tabla del resto -->
@@ -353,11 +354,11 @@
 // ================================================================
 //  ⚙️  CONFIGURACIÓN — PEGA AQUÍ TU URL DE GOOGLE SHEETS
 // ================================================================
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_0J0YT_RRJ3K7eGrDI_pCcS4FFrW_afgmVUWp2C2jUqOJqyA3IHdSZSmXyPJqc6PJGlVJiD/pub?output=csv";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_0J0YT_RRJ3K7eGrDI_pCcS4FFrW_afgmVUWp2C2jUqOJqyA3IHdSZSmXyPJqc6PJGlVJiD/pub?gid=978512099&single=true&output=csv";
 
 //  Nombre de las columnas en tu Google Sheet (sensible a mayúsculas)
-const COL_NOMBRE  = "Nombre";   // columna con los nombres
-const COL_PUNTAJE = "Puntaje";  // columna con los puntajes
+const COL_NOMBRE   = "Nombre";         // columna con los nombres
+const COL_PUNTAJE  = "Puntaje";        // columna con los puntajes
 const COL_TOTAL    = "Total Partidos"; // columna dedicada — el valor se lee de la primera fila de datos
 
 // Texto que aparece antes de los resultados — __ se reemplaza por el valor del sheet
@@ -383,22 +384,34 @@ let countdownTimer = null;
 let prevNames = new Set();
 
 function parseCSV(text) {
-  const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return { rows: [], total: null };
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
-  const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
-  const iPuntaje = headers.findIndex(h => h.toLowerCase() === COL_PUNTAJE.toLowerCase());
-  const iTotal   = headers.findIndex(h => h.toLowerCase() === COL_TOTAL.toLowerCase());
-  if (iNombre < 0 || iPuntaje < 0) return null;
+  try {
+    const lines = text.trim().split(/\r?\n/);
+    if (lines.length < 2) return { rows: [], total: null };
 
-  const rows = [];
-  for (let i = 1; i < lines.length; i++) {
-    const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g,''));
-    const nombre  = cols[iNombre] || '';
-    const puntaje = parseFloat(cols[iPuntaje]);
-    if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
+    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
+    const iPuntaje = headers.findIndex(h => h.toLowerCase() === COL_PUNTAJE.toLowerCase());
+    const iTotal   = headers.findIndex(h => h.toLowerCase() === COL_TOTAL.toLowerCase());
+
+    if (iNombre < 0 || iPuntaje < 0) return null;
+
+    let total = null;
+    const rows = [];
+
+    for (let i = 1; i < lines.length; i++) {
+      if (!lines[i].trim()) continue; // saltar filas vacías
+      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      const nombre  = cols[iNombre] || '';
+      const puntaje = parseFloat(cols[iPuntaje]);
+      // Leer total solo de la primera fila de datos si la columna existe
+      if (i === 1 && iTotal >= 0 && cols[iTotal]) total = cols[iTotal];
+      if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
+    }
+    return { rows, total };
+  } catch (e) {
+    console.error('Error en parseCSV:', e);
+    return null;
   }
-  return { rows, total };
 }
 
 function setStatus(type, msg, countdown) {
@@ -471,15 +484,18 @@ async function fetchData() {
       setStatus('error', `Error: columnas "${COL_NOMBRE}" o "${COL_PUNTAJE}" no encontradas`);
       return;
     }
-	const { rows: datos, total } = resultado;
 
-    // Mostrar texto "Después de __ partidos"
+    const { rows: datos, total } = resultado;
+
+    // Mostrar texto "Después de __ partidos" solo si hay valor en el sheet
     const banner = document.getElementById('banner-partidos');
-    if (total !== null) {
-      banner.textContent = TEXTO_PARTIDOS.replace('__', total);
-      banner.style.display = 'block';
-    } else {
-      banner.style.display = 'none';
+    if (banner) {
+      if (total !== null && total !== '') {
+        banner.textContent = TEXTO_PARTIDOS.replace('__', total);
+        banner.style.display = 'block';
+      } else {
+        banner.style.display = 'none';
+      }
     }
 
     if (datos.length === 0) {
