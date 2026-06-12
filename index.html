@@ -307,6 +307,15 @@
   </div>
 
   <!-- Podio top 3 -->
+  <div id="banner-partidos" style="
+    display: none;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(232,234,240,0.65);
+    letter-spacing: 0.5px;
+  "></div>
   <div class="podio" id="podio" style="display:none"></div>
 
   <!-- Tabla del resto -->
@@ -349,6 +358,10 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_
 //  Nombre de las columnas en tu Google Sheet (sensible a mayúsculas)
 const COL_NOMBRE  = "Nombre";   // columna con los nombres
 const COL_PUNTAJE = "Puntaje";  // columna con los puntajes
+const COL_TOTAL    = "Total Partidos"; // columna dedicada — el valor se lee de la primera fila de datos
+
+// Texto que aparece antes de los resultados — __ se reemplaza por el valor del sheet
+const TEXTO_PARTIDOS = "Después de __ partidos";
 
 //  Título visible en la página
 const TITULO    = "CLASIFICACIÓN GENERAL";
@@ -371,11 +384,12 @@ let prevNames = new Set();
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return [];
+  if (lines.length < 2) return { rows: [], total: null };
   const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
   const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
   const iPuntaje = headers.findIndex(h => h.toLowerCase() === COL_PUNTAJE.toLowerCase());
-  if (iNombre < 0 || iPuntaje < 0) return null; // columnas no encontradas
+  const iTotal   = headers.findIndex(h => h.toLowerCase() === COL_TOTAL.toLowerCase());
+  if (iNombre < 0 || iPuntaje < 0) return null;
 
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
@@ -384,7 +398,7 @@ function parseCSV(text) {
     const puntaje = parseFloat(cols[iPuntaje]);
     if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
   }
-  return rows;
+  return { rows, total };
 }
 
 function setStatus(type, msg, countdown) {
@@ -448,14 +462,24 @@ async function fetchData() {
     const resp = await fetch(url, { cache: 'no-store' });
     if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const text = await resp.text();
-    const datos = parseCSV(text);
+    const resultado = parseCSV(text);
 
     document.getElementById('error-state').style.display = 'none';
     document.getElementById('empty-state').style.display = 'none';
 
-    if (!datos) {
+    if (!resultado) {
       setStatus('error', `Error: columnas "${COL_NOMBRE}" o "${COL_PUNTAJE}" no encontradas`);
       return;
+    }
+	const { rows: datos, total } = resultado;
+
+    // Mostrar texto "Después de __ partidos"
+    const banner = document.getElementById('banner-partidos');
+    if (total !== null) {
+      banner.textContent = TEXTO_PARTIDOS.replace('__', total);
+      banner.style.display = 'block';
+    } else {
+      banner.style.display = 'none';
     }
 
     if (datos.length === 0) {
