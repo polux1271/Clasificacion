@@ -299,14 +299,6 @@
     <span class="event-label">En vivo</span>
     <h1 id="titulo-evento">CLASIFICACIÓN</h1>
     <p class="subtitle" id="subtitulo-evento">Unos Rien... Otros... Nos divertimos</p>
-	<p id="banner-partidos" style="
-      display: none;
-      margin-top: 0.75rem;
-      font-size: 15px;
-      font-weight: 500;
-      color: rgba(232,234,240,0.6);
-      letter-spacing: 0.5px;
-    "></p>
   </header>
 
   <div class="status-bar">
@@ -357,11 +349,6 @@ const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_
 //  Nombre de las columnas en tu Google Sheet (sensible a mayúsculas)
 const COL_NOMBRE  = "Nombre";   // columna con los nombres
 const COL_PUNTAJE = "Puntaje";  // columna con los puntajes
-const COL_TOTAL    = "Total Partidos"; // columna dedicada — el valor se lee de la primera fila de datos
-
-// Texto que aparece debajo del título — el valor de la celda reemplaza __
-const TEXTO_PARTIDOS = "Después de __ partidos";
-
 
 //  Título visible en la página
 const TITULO    = "CLASIFICACIÓN GENERAL";
@@ -384,22 +371,20 @@ let prevNames = new Set();
 
 function parseCSV(text) {
   const lines = text.trim().split(/\r?\n/);
-  if (lines.length < 2) return { rows: [], total: null };
+  if (lines.length < 2) return [];
   const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g,''));
   const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
   const iPuntaje = headers.findIndex(h => h.toLowerCase() === COL_PUNTAJE.toLowerCase());
-    const iTotal   = headers.findIndex(h => h.toLowerCase() === COL_TOTAL.toLowerCase());
-  if (iNombre < 0 || iPuntaje < 0) return null;
-  let total = null;
+  if (iNombre < 0 || iPuntaje < 0) return null; // columnas no encontradas
+
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
     const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g,''));
     const nombre  = cols[iNombre] || '';
     const puntaje = parseFloat(cols[iPuntaje]);
-	    if (i === 1 && iTotal >= 0) total = cols[iTotal] || null;
     if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
   }
-  return { rows, total };
+  return rows;
 }
 
 function setStatus(type, msg, countdown) {
@@ -472,16 +457,7 @@ async function fetchData() {
       setStatus('error', `Error: columnas "${COL_NOMBRE}" o "${COL_PUNTAJE}" no encontradas`);
       return;
     }
-	    const { rows: datos, total } = resultado;
 
-    // Mostrar texto "Después de __ partidos"
-    const banner = document.getElementById('banner-partidos');
-    if (total !== null) {
-      banner.textContent = TEXTO_PARTIDOS.replace('__', total);
-      banner.style.display = 'block';
-    } else {
-      banner.style.display = 'none';
-    }
     if (datos.length === 0) {
       document.getElementById('podio').style.display = 'none';
       document.getElementById('table-wrap').style.display = 'none';
