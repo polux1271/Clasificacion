@@ -386,7 +386,7 @@ let prevNames = new Set();
 function parseCSV(text) {
   try {
     const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) return { rows: [], total: null };
+    if (lines.length < 2) return { rows: [], total: null, tituloFinal: null };
 
     const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
     const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
@@ -396,6 +396,7 @@ function parseCSV(text) {
     if (iNombre < 0 || iPuntaje < 0) return null;
 
     let total = null;
+    let tituloFinal = null; // valor de C3: título alternativo cuando se cumple la condición
     const rows = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -403,11 +404,11 @@ function parseCSV(text) {
       const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
       const nombre  = cols[iNombre] || '';
       const puntaje = parseFloat(cols[iPuntaje]);
-      // Leer total solo de la primera fila de datos si la columna existe
-      if (i === 1 && iTotal >= 0 && cols[iTotal]) total = cols[iTotal];
+      if (i === 1 && iTotal >= 0 && cols[iTotal]) total = cols[iTotal]; // C2: total partidos
+      if (i === 2 && iTotal >= 0 && cols[iTotal]) tituloFinal = cols[iTotal]; // C3: título alternativo
       if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
     }
-    return { rows, total };
+    return { rows, total, tituloFinal };
   } catch (e) {
     console.error('Error en parseCSV:', e);
     return null;
@@ -485,7 +486,15 @@ async function fetchData() {
       return;
     }
 
-    const { rows: datos, total } = resultado;
+    const { rows: datos, total, tituloFinal } = resultado;
+
+    // Cambiar título si el número de partidos llega a 104
+    const tituloEl = document.getElementById('titulo-evento');
+    if (total !== null && parseInt(total) >= 104 && tituloFinal) {
+      tituloEl.textContent = tituloFinal;
+    } else {
+      tituloEl.textContent = TITULO;
+    }
 
     // Mostrar texto "Después de __ partidos" solo si hay valor en el sheet
     const banner = document.getElementById('banner-partidos');
