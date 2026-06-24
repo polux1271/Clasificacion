@@ -310,7 +310,7 @@
   <div id="banner-partidos" style="
     display: none;
     text-align: center;
-    margin-bottom: 1.5rem;
+    margin-bottom: 0.5rem;
     font-size: 16px;
     font-weight: 500;
     color: rgba(232,234,240,0.65);
@@ -320,10 +320,14 @@
     display: none;
     text-align: center;
     margin-bottom: 1.5rem;
-    font-size: 10px;
+    font-size: 11px;
     font-weight: 700;
     color: rgba(232,234,240,0.85);
-    letter-spacing: 0.5px;
+    letter-spacing: 0.3px;
+	line-height: 1.6;
+    white-space: normal;
+    word-wrap: break-word;
+    padding: 0 0.5rem;
   "></div>
 
   <div class="podio" id="podio" style="display:none"></div>
@@ -352,10 +356,7 @@
     <p id="error-msg">No se pudo conectar con la hoja de cálculo.</p>
   </div>
 
-  <footer>
-    Actualización automática cada <span id="intervalo-lbl">300</span> segundos
-    &nbsp;·&nbsp; Datos en tiempo real
-  </footer>
+  <footer style="display:none"></footer>
 
 </div>
 
@@ -517,7 +518,7 @@ async function fetchData() {
         banner.style.display = 'none';
       }
     }
-	// Mostrar texto adicional de C4 en negrilla
+// Mostrar texto adicional de C4 en negrilla
     const extra = document.getElementById('texto-extra');
     if (extra) {
       if (textoExtra) {
