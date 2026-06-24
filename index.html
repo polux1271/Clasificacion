@@ -316,6 +316,15 @@
     color: rgba(232,234,240,0.65);
     letter-spacing: 0.5px;
   "></div>
+  <div id="texto-extra" style="
+    display: none;
+    text-align: center;
+    margin-bottom: 1.5rem;
+    font-size: 16px;
+    font-weight: 700;
+    color: rgba(232,234,240,0.85);
+    letter-spacing: 0.5px;
+  "></div>
 
   <div class="podio" id="podio" style="display:none"></div>
 
@@ -396,7 +405,8 @@ function parseCSV(text) {
     if (iNombre < 0 || iPuntaje < 0) return null;
 
     let total = null;
-    let tituloFinal = null; // valor de C3: título alternativo cuando se cumple la condición
+    let tituloFinal = null;
+    let textoExtra = null;
     const rows = [];
 
     for (let i = 1; i < lines.length; i++) {
@@ -406,9 +416,10 @@ function parseCSV(text) {
       const puntaje = parseFloat(cols[iPuntaje]);
       if (i === 1 && iTotal >= 0 && cols[iTotal]) total = cols[iTotal]; // C2: total partidos
       if (i === 2 && iTotal >= 0 && cols[iTotal]) tituloFinal = cols[iTotal]; // C3: título alternativo
+	  if (i === 3 && iTotal >= 0 && cols[iTotal]) textoExtra = cols[iTotal]; // C4: texto adicional
       if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
     }
-    return { rows, total, tituloFinal };
+    return { rows, total, tituloFinal, textoExtra };
   } catch (e) {
     console.error('Error en parseCSV:', e);
     return null;
@@ -486,7 +497,7 @@ async function fetchData() {
       return;
     }
 
-    const { rows: datos, total, tituloFinal } = resultado;
+    const { rows: datos, total, tituloFinal, textoExtra } = resultado;
 
     // Cambiar título si el número de partidos llega a 104
     const tituloEl = document.getElementById('titulo-evento');
@@ -504,6 +515,16 @@ async function fetchData() {
         banner.style.display = 'block';
       } else {
         banner.style.display = 'none';
+      }
+    }
+	// Mostrar texto adicional de C4 en negrilla
+    const extra = document.getElementById('texto-extra');
+    if (extra) {
+      if (textoExtra) {
+        extra.textContent = textoExtra;
+        extra.style.display = 'block';
+      } else {
+        extra.style.display = 'none';
       }
     }
 
