@@ -324,7 +324,7 @@
     font-size: 11px;
     font-weight: 700;
     color: rgba(232,234,240,0.85);
-    letter-spacing: 0.3px;
+    letter-spacing: 0.5px;
     line-height: 1.6;
     white-space: normal;
     word-wrap: break-word;
@@ -357,7 +357,10 @@
     <p id="error-msg">No se pudo conectar con la hoja de cálculo.</p>
   </div>
 
-  <footer style="display:none"></footer>
+  <footer>
+    Actualización automática cada <span id="intervalo-lbl">300</span> segundos
+    &nbsp;·&nbsp; Datos en tiempo real
+  </footer>
 
 </div>
 
@@ -365,7 +368,7 @@
 // ================================================================
 //  ⚙️  CONFIGURACIÓN — PEGA AQUÍ TU URL DE GOOGLE SHEETS
 // ================================================================
-const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_0J0YT_RRJ3K7eGrDI_pCcS4FFrW_afgmVUWp2C2jUqOJqyA3IHdSZSmXyPJqc6PJGlVJiD/pub?output=csv";
+const SHEET_CSV_URL = "https://docs.google.com/spreadsheets/d/e/2PACX-1vRyZ9jb4_0J0YT_RRJ3K7eGrDI_pCcS4FFrW_afgmVUWp2C2jUqOJqyA3IHdSZSmXyPJqc6PJGlVJiD/pub?gid=978512099&single=true&output=csv";
 
 //  Nombre de las columnas en tu Google Sheet (sensible a mayúsculas)
 const COL_NOMBRE   = "Nombre";         // columna con los nombres
@@ -385,6 +388,7 @@ const INTERVALO_SEG = 300;
 
 document.getElementById('titulo-evento').textContent  = TITULO;
 document.getElementById('subtitulo-evento').textContent = SUBTITULO;
+document.getElementById('intervalo-lbl').textContent  = INTERVALO_SEG;
 document.title = TITULO;
 
 const medals = ['🥇','🥈','🥉'];
@@ -393,31 +397,55 @@ let countdown = INTERVALO_SEG;
 let countdownTimer = null;
 let prevNames = new Set();
 
+function parseCSVLine(line) {
+  const result = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (ch === '"') {
+      if (inQuotes && line[i+1] === '"') { cur += '"'; i++; }
+      else inQuotes = !inQuotes;
+    } else if (ch === ',' && !inQuotes) {
+      result.push(cur.trim());
+      cur = '';
+    } else {
+      cur += ch;
+    }
+  }
+  result.push(cur.trim());
+  return result;
+}
+
 function parseCSV(text) {
   try {
     const lines = text.trim().split(/\r?\n/);
-    if (lines.length < 2) return { rows: [], total: null, tituloFinal: null };
+    if (lines.length < 2) return { rows: [], total: null, tituloFinal: null, textoExtra: null };
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+    const headers = parseCSVLine(lines[0]);
     const iNombre  = headers.findIndex(h => h.toLowerCase() === COL_NOMBRE.toLowerCase());
     const iPuntaje = headers.findIndex(h => h.toLowerCase() === COL_PUNTAJE.toLowerCase());
     const iTotal   = headers.findIndex(h => h.toLowerCase() === COL_TOTAL.toLowerCase());
 
     if (iNombre < 0 || iPuntaje < 0) return null;
 
-    let total = null;
-    let tituloFinal = null;
-    let textoExtra = null;
+    let total = null, tituloFinal = null, textoExtra = null;
     const rows = [];
+    let dataRow = 0;
 
     for (let i = 1; i < lines.length; i++) {
-      if (!lines[i].trim()) continue; // saltar filas vacías
-      const cols = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      if (!lines[i].trim()) continue;
+      const cols    = parseCSVLine(lines[i]);
       const nombre  = cols[iNombre] || '';
       const puntaje = parseFloat(cols[iPuntaje]);
-      if (i === 1 && iTotal >= 0 && cols[iTotal]) total = cols[iTotal]; // C2: total partidos
-      if (i === 2 && iTotal >= 0 && cols[iTotal]) tituloFinal = cols[iTotal]; // C3: título alternativo
-      if (i === 3 && iTotal >= 0 && cols[iTotal]) textoExtra = cols[iTotal]; // C4: texto adicional
+      dataRow++;
+
+      if (iTotal >= 0) {
+        const val = (cols[iTotal] || '').trim();
+        if (dataRow === 1 && val) total       = val; // C2: total partidos
+        if (dataRow === 2 && val) tituloFinal = val; // C3: título alternativo
+        if (dataRow === 3 && val) textoExtra  = val; // C4: texto adicional
+      }
+
       if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
     }
     return { rows, total, tituloFinal, textoExtra };
@@ -552,7 +580,7 @@ async function fetchData() {
   } catch(e) {
     setStatus('error', 'Sin conexión — reintentando…');
     document.getElementById('error-state').style.display = 'block';
-    document.getElementById('error-msg').textContent = 'No se pudo leer el archivo. Verifica que el sheet esté publicado como CSV.';
+    document.getElementById('error-msg').textContent = 'No se pudo leer el archivo. Verifica que el sheet esté publicado como CSV. (' + e.message + ')';
     console.error(e);
   }
 
