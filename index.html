@@ -324,7 +324,7 @@
     font-weight: 700;
     color: rgba(232,234,240,0.85);
     letter-spacing: 0.3px;
-	line-height: 1.6;
+    line-height: 1.6;
     white-space: normal;
     word-wrap: break-word;
     padding: 0 0.5rem;
@@ -417,7 +417,7 @@ function parseCSV(text) {
       const puntaje = parseFloat(cols[iPuntaje]);
       if (i === 1 && iTotal >= 0 && cols[iTotal]) total = cols[iTotal]; // C2: total partidos
       if (i === 2 && iTotal >= 0 && cols[iTotal]) tituloFinal = cols[iTotal]; // C3: título alternativo
-	  if (i === 3 && iTotal >= 0 && cols[iTotal]) textoExtra = cols[iTotal]; // C4: texto adicional
+      if (i === 3 && iTotal >= 0 && cols[iTotal]) textoExtra = cols[iTotal]; // C4: texto adicional
       if (nombre && !isNaN(puntaje)) rows.push({ nombre, puntaje });
     }
     return { rows, total, tituloFinal, textoExtra };
@@ -518,7 +518,7 @@ async function fetchData() {
         banner.style.display = 'none';
       }
     }
-// Mostrar texto adicional de C4 en negrilla
+    // Mostrar texto adicional de C4 en negrilla
     const extra = document.getElementById('texto-extra');
     if (extra) {
       if (textoExtra) {
