@@ -436,7 +436,8 @@ function parseCSV(text) {
       if (!lines[i].trim()) continue;
       const cols    = parseCSVLine(lines[i]);
       const nombre  = cols[iNombre] || '';
-      const puntaje = parseFloat(cols[iPuntaje]);
+      const rawNum  = (cols[iPuntaje] || '').replace(/\./g, '').replace(',', '.');
+      const puntaje = parseFloat(rawNum);
       dataRow++;
 
       if (iTotal >= 0) {
